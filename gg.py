@@ -7,6 +7,7 @@ old_stdout = sys.stdout
 log_file = open("Output.log", "w", encoding='utf-8')
 sys.stdout = log_file
 
+
 def load_video_frames(video_path, max_frames=None):
     cap = cv2.VideoCapture(video_path)
     frames = []
@@ -57,33 +58,27 @@ def detect_objects(fg_mask, min_area=1000, max_aspect_ratio=3, min_width=25, min
         ):
             objects.append((x, y, w, h))
 
-        # if area > 500:  # Filter small objects
-        #     objects.append((x, y, w, h))
     return objects
 
 
-def detect_objects_yolo(frame, min_area=1000, max_aspect_ratio=3, min_width=25, min_height=25):
-    results = model(frame)  # Detect objects using YOLO
+def detect_objects(fg_mask, min_area=900, max_aspect_ratio=3, min_width=20, min_height=20):
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+        fg_mask, connectivity=8)
     objects = []
+    for i in range(1, num_labels):  # Skip background
+        x, y, w, h, area = stats[i]
+        aspect_ratio = w / float(h)  # To filter out elongated noise
 
-    for result in results:
-        for box in result.boxes:
-            x1, y1, x2, y2 = map(int, box.xyxy[0])  # Bounding box
-            w = x2 - x1
-            h = y2 - y1
-            area = w * h  # Calculate bounding box area
-            aspect_ratio = w / float(h)  # Calculate aspect ratio
+        if (
+            area >= min_area
+            and aspect_ratio <= max_aspect_ratio
+            and w >= min_width and h >= min_height
+        ):
+            objects.append((x, y, w, h))
 
-            # Apply filtering conditions
-            if (
-                area >= min_area
-                and aspect_ratio <= max_aspect_ratio
-                and w >= min_width and h >= min_height
-            ):
-                # Store bounding box as (x, y, w, h)
-                objects.append((x1, y1, w, h))
-
-    return objects  # Return list of detected objects
+        # if area > 500:  # Filter small objects
+        #     objects.append((x, y, w, h))
+    return objects
 
 
 def filter_parked_cars(objects, parked_regions):
@@ -148,7 +143,8 @@ def process_video(video_path, save_output=False, save_txt=True, alpha=3):
 # Example usage
 # Replace with actual video path
 video_path = "AICity_data/AICity_data/train/S03/c010/vdo.avi"
-alpha_list = [2, 3, 3.5, 4.5, 5, 6, 6.5, 7, 9, 11, 13]
+# alpha_list = [2, 3, 3.5, 4.5, 5, 6, 6.5, 7, 9, 11, 13]
+alpha_list = [1.5]
 
 for alpha in alpha_list:
     process_video(video_path, alpha=alpha)

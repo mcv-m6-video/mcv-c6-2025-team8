@@ -1,3 +1,4 @@
+from ultralytics import YOLO
 import os
 import numpy as np
 import cv2
@@ -6,6 +7,8 @@ import sys
 old_stdout = sys.stdout
 log_file = open("Output.log", "w", encoding='utf-8')
 sys.stdout = log_file
+
+model = YOLO("yolov8n.pt")
 
 
 def load_video_frames(video_path, max_frames=None):
@@ -43,7 +46,7 @@ def apply_morphology(fg_mask):
     return fg_mask
 
 
-def detect_objects(fg_mask, min_area=700, max_aspect_ratio=3, min_width=10, min_height=10):
+def detect_objects(fg_mask, min_area=1000, max_aspect_ratio=3, min_width=25, min_height=25):
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
         fg_mask, connectivity=8)
     objects = []
@@ -61,6 +64,30 @@ def detect_objects(fg_mask, min_area=700, max_aspect_ratio=3, min_width=10, min_
         # if area > 500:  # Filter small objects
         #     objects.append((x, y, w, h))
     return objects
+
+
+def detect_objects_yolo(frame, min_area=1000, max_aspect_ratio=3, min_width=25, min_height=25):
+    results = model(frame)  # Detect objects using YOLO
+    objects = []
+
+    for result in results:
+        for box in result.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])  # Bounding box
+            w = x2 - x1
+            h = y2 - y1
+            area = w * h  # Calculate bounding box area
+            aspect_ratio = w / float(h)  # Calculate aspect ratio
+
+            # Apply filtering conditions
+            if (
+                area >= min_area
+                and aspect_ratio <= max_aspect_ratio
+                and w >= min_width and h >= min_height
+            ):
+                # Store bounding box as (x, y, w, h)
+                objects.append((x1, y1, w, h))
+
+    return objects  # Return list of detected objects
 
 
 def filter_parked_cars(objects, parked_regions):

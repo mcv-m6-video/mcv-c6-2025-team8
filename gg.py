@@ -1,4 +1,3 @@
-from ultralytics import YOLO
 import os
 import numpy as np
 import cv2
@@ -7,9 +6,6 @@ import sys
 old_stdout = sys.stdout
 log_file = open("Output.log", "w", encoding='utf-8')
 sys.stdout = log_file
-
-model = YOLO("yolov8n.pt")
-
 
 def load_video_frames(video_path, max_frames=None):
     cap = cv2.VideoCapture(video_path)

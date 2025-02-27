@@ -43,7 +43,7 @@ def apply_morphology(fg_mask):
     return fg_mask
 
 
-def detect_objects(fg_mask, min_area=1000, max_aspect_ratio=3, min_width=25, min_height=25):
+def detect_objects(fg_mask, min_area=1500, max_aspect_ratio=3, min_width=25, min_height=25):
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
         fg_mask, connectivity=8)
     objects = []
@@ -59,38 +59,6 @@ def detect_objects(fg_mask, min_area=1000, max_aspect_ratio=3, min_width=25, min
             objects.append((x, y, w, h))
 
     return objects
-
-
-def detect_objects(fg_mask, min_area=900, max_aspect_ratio=3, min_width=20, min_height=20):
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
-        fg_mask, connectivity=8)
-    objects = []
-    for i in range(1, num_labels):  # Skip background
-        x, y, w, h, area = stats[i]
-        aspect_ratio = w / float(h)  # To filter out elongated noise
-
-        if (
-            area >= min_area
-            and aspect_ratio <= max_aspect_ratio
-            and w >= min_width and h >= min_height
-        ):
-            objects.append((x, y, w, h))
-
-        # if area > 500:  # Filter small objects
-        #     objects.append((x, y, w, h))
-    return objects
-
-
-def filter_parked_cars(objects, parked_regions):
-    """Remove detected objects inside predefined parked car regions."""
-    filtered_objects = []
-    for (x, y, w, h) in objects:
-        in_parked_area = any(px <= x <= px + pw and py <= y <=
-                             py + ph for (px, py, pw, ph) in parked_regions)
-        if not in_parked_area:
-            filtered_objects.append((x, y, w, h))
-    return filtered_objects
-
 
 def save_detections_txt(detections, output_file):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -112,9 +80,6 @@ def process_video(video_path, save_output=False, save_txt=True, alpha=3):
         fg_mask = segment_foreground(frames[i], mean_bg, var_bg, alpha=alpha)
         fg_mask = apply_morphology(fg_mask)
         objects = detect_objects(fg_mask)
-
-        # Remove parked cars
-        # objects = filter_parked_cars(objects, parked_car_regions)
 
         frame_bgr = cv2.cvtColor(frames[i], cv2.COLOR_GRAY2BGR)
         detections[i] = []
@@ -140,11 +105,9 @@ def process_video(video_path, save_output=False, save_txt=True, alpha=3):
     cv2.destroyAllWindows()
 
 
-# Example usage
-# Replace with actual video path
+
 video_path = "AICity_data/AICity_data/train/S03/c010/vdo.avi"
-# alpha_list = [2, 3, 3.5, 4.5, 5, 6, 6.5, 7, 9, 11, 13]
-alpha_list = [1.5]
+alpha_list = [2, 3, 3.5, 4.5, 5, 6, 6.5, 7, 9, 11, 13]
 
 for alpha in alpha_list:
     process_video(video_path, alpha=alpha)

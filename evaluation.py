@@ -1,8 +1,4 @@
 import sys
-import csv
-import cv2
-import numpy as np
-import json
 from sklearn.metrics import precision_recall_curve, average_precision_score
 
 old_stdout = sys.stdout
@@ -47,17 +43,15 @@ def load_annotations(annotation_file, delimiter=",", is_detection=False):
     annotations = []
     with open(annotation_file, "r") as f:
         for line in f:
-            row = line.strip().split(delimiter)  # Use specified delimiter
+            row = line.strip().split(delimiter) 
             frame_id = int(row[0])  # Frame number
 
             if is_detection:
-                # Detections: x, y, w, h at indices 1-4
                 x, y, w, h = map(int, row[1:5])
-                score = float(row[5])  # Score is at index 5
+                score = float(row[5])  
                 annotations.append(
                     {"frame_id": frame_id, "bbox": (x, y, w, h), "score": score})
             else:
-                # Ground truth: x, y, w, h at indices 2-5
                 x, y, w, h = map(int, row[2:6])
                 annotations.append(
                     {"frame_id": frame_id, "bbox": (x, y, w, h)})
@@ -66,42 +60,29 @@ def load_annotations(annotation_file, delimiter=",", is_detection=False):
 
 
 def main(detection_file, ground_truth_file, alpha_threshold=0.5, alpha=-1):
-    # detections = load_annotations(detection_file, delimiter=" ")
-    # ground_truths = load_annotations(ground_truth_file, delimiter=",")
 
     detections = load_annotations(
-        detection_file, delimiter=" ", is_detection=True)  # Space-separated
+        detection_file, delimiter=" ", is_detection=True)  
     ground_truths = load_annotations(
-        ground_truth_file, delimiter=",", is_detection=False)  # CSV format
+        ground_truth_file, delimiter=",", is_detection=False)  
 
-    # ground_truths = load_annotations(ground_truth_file)
     detections = [d for d in detections if d["score"] >= alpha_threshold]
 
     precision, recall, ap = evaluate_detections(detections, ground_truths)
-    # print(precision, recall, ap)
 
     print(f"Alpha: {alpha}, AP0.5: {ap:.4f}")
     return precision, recall, ap
 
-
-# Example usage
-# Replace with actual detection results
-detection_file = "AICity_data/AICity_data/train/S03/c010/det/det_masks_gausian.txt"
-detection_file = "AICity_data/AICity_data/train/S03/c010/det/det_masks.txt"
-
-# Replace with actual annotations
 ground_truth_file = "AICity_data/AICity_data/train/S03/c010/gt/gt.txt"
 
-alpha_list = [2, 3, 3.5, 4.5, 5, 6, 6.5, 7, 9, 11, 13]
+alpha_list = [1.5, 2, 2.5, 3, 3.5, 4.5, 5,
+              5.5, 6, 6.5, 7, 8, 9, 11, 13]
 
 for alpha in alpha_list:
 
     detection_file = f"AICity_data/AICity_data/train/S03/c010/det/det_masks_gausian_{alpha}.txt"
-
-    # print(f"Alpha: {alpha}")
     main(detection_file, ground_truth_file, alpha=alpha)
 
-    # print('_______________________________________________')
 
 sys.stdout = old_stdout
 log_file.close()

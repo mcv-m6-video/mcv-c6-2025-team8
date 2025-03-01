@@ -105,9 +105,9 @@ def process_video(video_path, save_output=False, save_txt=True, alpha=3):
     cv2.destroyAllWindows()
 
 
-
 video_path = "AICity_data/AICity_data/train/S03/c010/vdo.avi"
-alpha_list = [2, 3, 3.5, 4.5, 5, 6, 6.5, 7, 9, 11, 13]
+alpha_list = [1.5, 2, 2.5, 3, 3.5, 4.5, 5,
+              5.5, 6, 6.5, 7, 8, 9, 11, 13]
 
 for alpha in alpha_list:
     process_video(video_path, alpha=alpha)

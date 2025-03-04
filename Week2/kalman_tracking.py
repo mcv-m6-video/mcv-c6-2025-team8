@@ -11,7 +11,6 @@ model = YOLO("models/yolov8n.pt")
 # Initialize SORT tracker
 tracker = Sort()
 
-# Paths
 video_path = "C:/Users/saran/OneDrive/Documenten/C6_videoanalysis/mcv-c6-2025-team8/AICity_data/train/S03/c010/vdo.avi"
 output_txt_path = "Week2/detections.txt"
 output_frames_dir = "Week2/tracked_frames"
@@ -20,7 +19,6 @@ output_video_path = "Week2/tracked_video.avi"
 # Create directory to save frames
 os.makedirs(output_frames_dir, exist_ok=True)
 
-# Open video
 cap = cv2.VideoCapture(video_path)
 
 # Get video properties
@@ -46,7 +44,7 @@ with open(output_txt_path, "w") as f:
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
-            break  # Exit when video ends
+            break
 
         # Run YOLO on frame
         results = model(frame)
@@ -72,15 +70,20 @@ with open(output_txt_path, "w") as f:
         # Update SORT tracker
         tracked_objects = tracker.update(dets)
 
+        id_colors = {}
+
         # Draw tracked bounding boxes with object IDs
         for track in tracked_objects:
             x1, y1, x2, y2, track_id = map(int, track[:5])
             w, h = x2 - x1, y2 - y1
-            color = (int(track_id * 50 % 255), int(track_id * 150 % 255), int(track_id * 200 % 255))
+            if track_id not in id_colors:
+                id_colors[track_id] = (int(track_id * 50 % 255), int(track_id * 150 % 255), int(track_id * 200 % 255))
+
+            color = id_colors[track_id]
 
             # Draw bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+            cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10), cv2.FONT_HERSHEY_DUPLEX, 0.6, color, 2)
 
         # Save frame with tracking info
         frame_path = os.path.join(output_frames_dir, f"frame_{frame_number:04d}.png")

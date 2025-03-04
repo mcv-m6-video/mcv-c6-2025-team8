@@ -48,7 +48,7 @@ def load_detections(detection_file):
     detections = {}
     with open(detection_file, "r") as f:
         for line in f:
-            frame_id, x1, y1, x2, y2, conf = map(float, line.strip().split(","))
+            frame_id, x1, y1, x2, y2, conf = map(float, line.strip().split())
             frame_id = int(frame_id)
 
             if frame_id not in detections:

@@ -17,7 +17,7 @@ detections = load_detections(detection_file)
 
 # Open video
 cap = cv2.VideoCapture(video_path)
-frame_number = 0  # OpenCV uses 0-based indexing
+frame_number = 0
 
 # Open output file for writing
 with open(output_file, "w") as f:
@@ -30,9 +30,9 @@ with open(output_file, "w") as f:
         dets = []
         if frame_number in detections:
             for x1, y1, x2, y2, conf in detections[frame_number]:
-                dets.append([x1, y1, x2, y2, conf])  # SORT format
+                dets.append([x1, y1, x2, y2, conf])
 
-        # Convert to NumPy array
+        # Convert to numpy array
         dets = np.array(dets)
 
         # Update tracker with new detections

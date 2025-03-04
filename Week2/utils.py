@@ -57,7 +57,7 @@ def load_detections(detection_file):
             detections[frame_id].append((x1, y1, x2, y2, conf))
     return detections
 
-def track_objects(detections, iou_threshold=0.5):
+def track_objects(detections, iou_threshold=0.3):
     """
     Tracks objects using IOU-based association.
     Returns a dictionary of tracks {track_id: [(frame_id, x1, y1, x2, y2, confidence)]}

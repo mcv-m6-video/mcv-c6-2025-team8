@@ -11,8 +11,8 @@ def save_tracks(tracks, output_file):
 
 
 # file paths
-detection_file = "Week2/detections.txt"
-output_file = "Week2/tracked_objects.txt"
+detection_file = "Week2/det_yolo_v8n_fine_tuned.txt"
+output_file = "Week2/tracked_objects_det_yolo_v8n_fine_tuned.txt"
 
 # main
 detections = load_detections(detection_file)

@@ -72,6 +72,6 @@ def show_video_with_bboxes(video_path, gt_path, det_path):
 # Example Usage
 video_path = "C:/Users/Vincent Heuer/OneDrive - Berode GmbH/Dokumente/Master/C6_project/AICity_data/AICity_data/train/S03/c010/vdo.avi"
 gt_path = "Week2/tracking_results/gt/gt.txt"
-det_path = "Week2/tracking_results/trackers/track_enhance.txt"
+det_path = "Week2/tracking_results/param_search/tracked_iou_0.1_conf_0.2_grace_3.txt"
 
 show_video_with_bboxes(video_path, gt_path, det_path)

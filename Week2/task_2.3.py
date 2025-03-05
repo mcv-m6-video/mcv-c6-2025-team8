@@ -373,9 +373,11 @@ def compute_similarity(gt_data, det_data):
     det_ids_list = []
     
     frames = sorted(set(gt_data.keys()).intersection(set(det_data.keys())))
+    
     for frame in frames:
-        gt_boxes = [box[1:5] for box in gt_data[frame]]
-        det_boxes = [box[1:5] for box in det_data[frame]]
+        # Convert (x, y, w, h) → (x1, y1, x2, y2)
+        gt_boxes = [(x, y, x + w, y + h) for _, x, y, w, h, _ in gt_data[frame]]
+        det_boxes = [(x, y, x + w, y + h) for _, x, y, w, h, _ in det_data[frame]]
         
         if not gt_boxes or not det_boxes:
             similarity_scores.append(np.zeros((len(gt_boxes), len(det_boxes))))
@@ -393,6 +395,7 @@ def compute_similarity(gt_data, det_data):
         det_ids_list.append(np.arange(len(det_boxes)))
     
     return gt_ids_list, det_ids_list, similarity_scores
+
 
 def compute_iou(box1, box2):
     """Computes IoU between two bounding boxes."""

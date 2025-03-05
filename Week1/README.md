@@ -50,7 +50,7 @@ The project involves:
 python non_adaptive.py --input vdo.avi --output output.mp4
 ```
 
-### 4. Evaluation (mAP@0.5)
+### 2. Evaluation (mAP@0.5)
 ```sh
 python evaluation.py --ground_truth gt.txt --detections det.txt
 ```

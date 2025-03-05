@@ -343,7 +343,7 @@ class Identity(_BaseMetric):
 
 
 
-def load_mot_txt(file_path):
+def load_mot_txt(file_path, min_frame=None):
     """Loads a MOT-style txt file into a dictionary format for TrackEval."""
     data = {}
     with open(file_path, 'r') as f:
@@ -351,10 +351,20 @@ def load_mot_txt(file_path):
             frame, track_id, x, y, w, h, conf, _, _, _ = map(float, line.strip().split(','))
             frame = int(frame)
             track_id = int(track_id)
+            
+            # Convert width and height to positive values
+            w = abs(w)
+            h = abs(h)
+
+            # Ignore frames before the first GT frame
+            if min_frame is not None and frame < min_frame:
+                continue
+            
             if frame not in data:
                 data[frame] = []
             data[frame].append((track_id, x, y, w, h, conf))
     return data
+
 
 def compute_similarity(gt_data, det_data):
     """Computes similarity scores between ground truth and detections based on IoU."""
@@ -404,7 +414,11 @@ def compute_iou(box1, box2):
 def main(gt_path, det_path):
     """Main function to compute HOTA."""
     gt_data = load_mot_txt(gt_path)
-    det_data = load_mot_txt(det_path)
+    
+    # Get the first GT frame number
+    min_frame = min(gt_data.keys()) if gt_data else None
+    
+    det_data = load_mot_txt(det_path, min_frame)
     
     gt_ids, det_ids, similarity_scores = compute_similarity(gt_data, det_data)
     
@@ -420,13 +434,13 @@ def main(gt_path, det_path):
     
     hota_metric = HOTA()
     results = hota_metric.eval_sequence(data)
-    print("HOTA Score:", results['HOTA'])
+    print("\nHOTA Score:", results['HOTA'])
     
     identity_metric = Identity()
     results = identity_metric.eval_sequence(data)
     print("Identity Score:", results['IDF1'])
     
 if __name__ == "__main__":
-    main("D:/C6/mcv-c6-2025-team8/AICity_data/AICity_data/train/S03/c010/gt/gt.txt",
-          "D:/C6/mcv-c6-2025-team8/AICity_data/AICity_data/train/S03/c010/gt/gt.txt")
+    main("Week2/tracking_results/gt/gt.txt",
+          "Week2/tracking_results/trackers/tracked_objects_det_yolo_v8n_fine_tuned.txt")
     

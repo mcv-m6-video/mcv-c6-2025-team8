@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 #from utils import load_detections, track_objects
 
 def visualize_tracks(detections, tracks):
@@ -47,7 +48,7 @@ def iou(box1, box2):
     # Compute IOU
     iou_value = inter_area / union_area if union_area > 0 else 0
 
-    print(f"Box1: {box1}, Box2: {box2}, Intersection: {inter_area}, Union: {union_area}, IOU: {iou_value}")  # Debugging line
+    #print(f"Box1: {box1}, Box2: {box2}, Intersection: {inter_area}, Union: {union_area}, IOU: {iou_value}")  # Debugging line
 
     return iou_value
 
@@ -72,60 +73,56 @@ def load_detections(detection_file):
     return detections
 
 
-def track_objects(detections, iou_threshold=0.5):
-    """
-    Tracks objects using IOU-based association.
-    Returns a dictionary of tracks {track_id: [(frame_id, x1, y1, x2, y2, confidence)]}
-    """
-    tracks = {}  # {track_id: [(frame_id, x1, y1, x2, y2, confidence)]}
-    active_tracks = {}  # {track_id: last_seen_bbox}
+def track_objects(detections, iou_threshold=0.3, confidence_threshold=0.5, grace_period=3):
+    tracks = {}
+    active_tracks = {}
     next_track_id = 242
+    missed_frame_count = {}
 
     for frame_id in sorted(detections.keys()):
-        new_tracks = []  # Detections for this frame that haven't been assigned
+        new_tracks = []
         assigned_tracks = set()
 
-        print(f"Processing frame {frame_id} with {len(detections[frame_id])} detections")
+        #print(f"Processing frame {frame_id} with {len(detections[frame_id])} detections")
 
-        # Compare each detection to active tracks
         for det in detections[frame_id]:
             x1, y1, x2, y2, conf = det
-            #print(f"Processing detection: {det}")  # Debugging line
+
+            if conf < confidence_threshold:
+                continue
+
             best_iou = 0
             best_track_id = None
 
             for track_id, last_bbox in active_tracks.items():
                 iou_score = iou(last_bbox, (x1, y1, x2, y2))
-                #print(f"Comparing detection {det} with track {track_id} (last bbox {last_bbox}), IOU: {iou_score}")  
                 if iou_score > best_iou:
                     best_iou = iou_score
                     best_track_id = track_id
 
-            # If a track is found with enough IOU, assign detection to it
             if best_iou >= iou_threshold:
-                #print(f"Assigning detection {det} to track {best_track_id} with IOU {best_iou}")
                 tracks[best_track_id].append((frame_id, x1, y1, x2, y2, conf))
                 active_tracks[best_track_id] = (x1, y1, x2, y2)
                 assigned_tracks.add(best_track_id)
+                missed_frame_count[best_track_id] = 0
             else:
-                #print(f"No track assigned for detection {det} (IOU: {best_iou})")
                 new_tracks.append((x1, y1, x2, y2, conf))
 
-        # Create new tracks for unassigned detections
         for det in new_tracks:
             x1, y1, x2, y2, conf = det
-            #print(f"Creating new track for detection {det}")
             tracks[next_track_id] = [(frame_id, x1, y1, x2, y2, conf)]
             active_tracks[next_track_id] = (x1, y1, x2, y2)
+            missed_frame_count[next_track_id] = 0
             next_track_id += 1
 
-        # Remove lost tracks (tracks that didn't get updated in this frame)
-        for track_id in list(active_tracks.keys()):  # Iterate over active track IDs
+        for track_id in list(active_tracks.keys()):
             if track_id not in assigned_tracks:
-                active_tracks[track_id] = active_tracks[track_id]  # Retain previous state
-
+                missed_frame_count[track_id] += 1
+                if missed_frame_count[track_id] > grace_period:
+                    del active_tracks[track_id]
 
     return tracks
+
 
 
 
@@ -138,17 +135,54 @@ def save_tracks(tracks, output_file):
                 h = abs(y2 - y1)
                 f.write(f"{frame_id}, {track_id}, {x1}, {y1}, {w}, {h}, {conf:.4f}, -1, -1, -1\n")
 
+def search_best_params(detection_file, output_dir):
+    # Define parameter search ranges
+    iou_thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+    confidence_thresholds = [0.2, 0.4, 0.6, 0.8]
+    grace_periods = [1, 3, 5, 8, 12, 15]
+    
+    # Load detections once
+    detections = load_detections(detection_file)
 
+    # Make output directory if it doesn't exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    # Iterate over all parameter combinations
+    for iou_threshold in iou_thresholds:
+        for confidence_threshold in confidence_thresholds:
+            for grace_period in grace_periods:
+                # Print parameter combination being tested
+                print(f"Testing with IoU threshold: {iou_threshold}, "
+                      f"Confidence threshold: {confidence_threshold}, "
+                      f"Grace period: {grace_period}")
+
+                # Track objects with the current parameter combination
+                tracked_objects = track_objects(
+                    detections, 
+                    iou_threshold=iou_threshold, 
+                    confidence_threshold=confidence_threshold, 
+                    grace_period=grace_period
+                )
+                
+                # Generate output file name based on parameters
+                output_file = os.path.join(
+                    output_dir, 
+                    f"tracked_iou_{iou_threshold}_conf_{confidence_threshold}_grace_{grace_period}.txt"
+                )
+                
+                # Save the tracked objects to the output file
+                save_tracks(tracked_objects, output_file)
+
+                print(f"Results saved to {output_file}")
 
 # file paths
 detection_file = "Week2/det_yolo_v8n_fine_tuned.txt"
-output_file = "Week2/tracked_objects_det_yolo_v8n_fine_tuned.txt"
+output_dir = "Week2/tracking_results/param_search"
+
 
 # main
-detections = load_detections(detection_file)
-tracked_objects = track_objects(detections, iou_threshold=0.2)
-
-save_tracks(tracked_objects, output_file)
+search_best_params(detection_file, output_dir)
 
 # Visualize tracked objects
 #visualize_tracks(detections, tracked_objects)

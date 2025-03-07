@@ -1,0 +1,4 @@
+train: train_all_frames.txt
+val: val_all_frames.txt
+nc: 1
+names: ['car']

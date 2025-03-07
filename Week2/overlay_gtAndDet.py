@@ -25,8 +25,8 @@ def load_mot_txt(file_path, is_detection=False):
     return data
 
 
-def show_video_with_bboxes(video_path, gt_path, det_path):
-    """Displays video with overlaid GT and Detection bounding boxes."""
+def show_video_with_bboxes(video_path, gt_path, det_path, output_path):
+    """Displays video with overlaid GT and Detection bounding boxes and saves it."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print("Error: Cannot open video file.")
@@ -35,6 +35,15 @@ def show_video_with_bboxes(video_path, gt_path, det_path):
     # Load ground truth and detections
     gt_data = load_mot_txt(gt_path)
     det_data = load_mot_txt(det_path, is_detection=True)
+
+    # Get video properties for saving the video
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Create VideoWriter object to save the output video
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')  # or 'MJPG' for example
+    out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
     frame_num = 1
     while cap.isOpened():
@@ -49,7 +58,7 @@ def show_video_with_bboxes(video_path, gt_path, det_path):
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 cv2.putText(frame, f"GT {track_id}", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
-        # Draw Detection boxes (Red)
+        ## Draw Detection boxes (Red)
         if frame_num in det_data:
             for track_id, x, y, w, h in det_data[frame_num]:
                 x, y, w, h = int(x), int(y), int(w), int(h)
@@ -59,19 +68,24 @@ def show_video_with_bboxes(video_path, gt_path, det_path):
         # Show the frame
         cv2.imshow("Tracking Visualization", frame)
 
+        # Write the frame to the output video
+        out.write(frame)
+
         # Exit if 'q' is pressed
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
         
         frame_num += 1
 
+    # Release the video objects
     cap.release()
+    out.release()
     cv2.destroyAllWindows()
-    print("Video playback finished.")
+    print("Video playback finished and output saved.")
 
 # Example Usage
 video_path = "C:/Users/Vincent Heuer/OneDrive - Berode GmbH/Dokumente/Master/C6_project/AICity_data/AICity_data/train/S03/c010/vdo.avi"
 gt_path = "Week2/tracking_results/gt/gt.txt"
-det_path = "Week2/tracking_results/param_search/tracked_iou_0.1_conf_0.2_grace_3.txt"
-
-show_video_with_bboxes(video_path, gt_path, det_path)
+det_path = "Week2/tracking_results/trackers/det_yolo_v8n_fine_tuned.txt"
+output_path = "../det.avi"
+show_video_with_bboxes(video_path, gt_path, det_path, output_path)

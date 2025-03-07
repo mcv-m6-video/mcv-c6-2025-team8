@@ -470,8 +470,8 @@ def main(gt_path, det_dir, output_file):
 if __name__ == "__main__":
     # Path to the single GT file and the detection files
     gt_file = "Week2/tracking_results/gt/gt.txt"
-    det_directory = "Week2/tracking_results/param_search"
-    output_file = "Week2/tracking_results/combined_results.txt"
+    det_directory = "Week2/tracking_results/param_search_2"
+    output_file = "Week2/tracking_results/combined_results_.txt"
 
     # Call the main function
     main(gt_file, det_directory, output_file)

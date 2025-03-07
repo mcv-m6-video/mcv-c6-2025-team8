@@ -137,9 +137,9 @@ def save_tracks(tracks, output_file):
 
 def search_best_params(detection_file, output_dir):
     # Define parameter search ranges
-    iou_thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-    confidence_thresholds = [0.2, 0.4, 0.6, 0.8]
-    grace_periods = [1, 3, 5, 8, 12, 15]
+    iou_thresholds = [0.1]
+    confidence_thresholds = [0.6, 0.8]
+    grace_periods = [5, 8, 12, 15, 20, 30, 40]
     
     # Load detections once
     detections = load_detections(detection_file)
@@ -178,7 +178,7 @@ def search_best_params(detection_file, output_dir):
 
 # file paths
 detection_file = "Week2/det_yolo_v8n_fine_tuned.txt"
-output_dir = "Week2/tracking_results/param_search"
+output_dir = "Week2/tracking_results/param_search_2"
 
 
 # main

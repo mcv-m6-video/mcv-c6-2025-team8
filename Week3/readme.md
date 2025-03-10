@@ -28,10 +28,11 @@ This project focuses on integrating optical flow techniques into multi-target si
 #### 2.2 MTSC Tracking on Additional AI City Sequences  
 - Extend MTSC tracking to sequences **S03** and **S04** of the AI City dataset.  
 
-## Installation  
+## Acknowledgments  
 
-1. Clone the repository:  
-   ```bash
-   git clone <repo_url>
-   cd <repo_name>
+We acknowledge and credit the following datasets and tools used in this project:  
+- **PyFlow**: [https://github.com/pathak22/pyflow](https://github.com/pathak22/pyflow)  
+- **KITTI Flow 2012 dataset**: [http://www.cvlibs.net/datasets/kitti/](http://www.cvlibs.net/datasets/kitti/)  
+- **AI City Challenge Dataset**: [https://www.aicitychallenge.org/2022-data-and-evaluation/](https://www.aicitychallenge.org/2022-data-and-evaluation/)  
+
 

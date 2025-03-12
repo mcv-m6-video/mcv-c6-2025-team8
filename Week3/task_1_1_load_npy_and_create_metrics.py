@@ -4,7 +4,7 @@ from utils import load_flow_from_file, visualize_optical_flow, calculate_optical
 
 image1_path = "KITTI_flow/image_0/000045_10.png"
 image2_path = "KITTI_flow/image_0/000045_11.png"
-flow_path = "raft_000045_best.npy"
+flow_path = "raft_000045.npy"
 flow_path = "gmflow_000045.npy"
 
 # load Ground Truth

@@ -14,13 +14,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 import logging
 import contextlib
 
+from collections import defaultdict
+
 # Suppress torchreid logging
 logging.getLogger("torchreid").setLevel(logging.ERROR)
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-yolo_model = YOLO('yolov8n.pt')
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+yolo_model = YOLO('yolov8n.pt').to(device)
 
 def save_detections(detections, output_file, score, frame_id):
     """
@@ -42,6 +44,7 @@ def save_detections(detections, output_file, score, frame_id):
 model = torchreid.models.build_model(
     name='osnet_x1_0', num_classes=1000, pretrained=True
 )
+model = model.to(device)
 model.eval()  # Set model to evaluation mode
 
 # Define function to extract ReID features
@@ -59,15 +62,17 @@ def extract_features(crop):
     if isinstance(crop, np.ndarray):
         crop = Image.fromarray(crop)
 
-    img_tensor = transform(crop).unsqueeze(0)  # ✅ Now it will work
+    img_tensor = transform(crop).unsqueeze(0).to(device)  # ✅ Move to GPU
 
     with torch.no_grad():
         features = model(img_tensor)  # Extract features
-    return features
+    return features.cpu()  # Move back to CPU if needed
+
 
 
 # Run YOLO detection with ReID feature extraction
 def detect_with_features(frame):
+
     results = yolo_model(frame)
     detections = []
     
@@ -77,58 +82,55 @@ def detect_with_features(frame):
             score = r.boxes.conf[i].item()
             
             # Extract cropped vehicle
-            obj_crop = frame[y1:y2, x1:x2]
-            
-            # Extract appearance features
-            with open('NUL', 'w') as fnull:  # Use 'NUL' for Windows
-                with contextlib.redirect_stdout(fnull):
-                    feature_vector = extract_features(obj_crop)
-            
-            detections.append([x1, y1, x2, y2, score, feature_vector])
+            if score > 0.3:
+                obj_crop = frame[y1:y2, x1:x2] 
+                
+                # Extract appearance features
+                with open('NUL', 'w') as fnull:  # Use 'NUL' for Windows
+                    with contextlib.redirect_stdout(fnull):
+                        feature_vector = extract_features(obj_crop)
+                
+                detections.append([x1, y1, x2, y2, score, feature_vector])
     
     return detections
 
 # Run SORT tracker for a single camera
-def run_sort_tracker(video_path):
+def run_sort_tracker(video_path, cam, sequence):
     cap = cv2.VideoCapture(video_path)
 
     tracker = Sort()
     tracking_results = {}    
         
-    # out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
-        
+            
         frame_id = int(cap.get(cv2.CAP_PROP_POS_FRAMES)) 
 
         detections = detect_with_features(frame)
+
         dets = np.array([d[:5] for d in detections])  # Ignore features for SORT
+        
         with open('NUL', 'w') as fnull:  # Use 'NUL' for Windows
             with contextlib.redirect_stdout(fnull):
                 tracks = tracker.update(dets)
-        
+
         score = detections[0][4]
         feature_vector = detections[0][5]
 
         tracking_results[frame_id] = [(t[0], t[1], t[2], t[3], int(t[4]), feature_vector) for t in tracks]
-        
-        cam = video_path.split('/')[-2]  # Extracts 'c00X'
-        cam = int(cam.replace('c00', ''))  # Converts 'c00X' to integer X
 
-        output_path = f"detections_{cam}.txt"
-        save_detections(tracking_results[frame_id][0], output_path, score, frame_id)
+        output_path = f"filtered_detections_{sequence}_{cam}.txt"
 
-        # Draw bounding boxes with IDs
         for track in tracking_results[frame_id]:
-            x1, y1, x2, y2, track_id = map(int, track[:5])
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            
-        # out.write(frame)  # Save the frame with tracking overlay
+                x1, y1, x2, y2, track_id = map(int, track[:5])
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+        save_detections(tracking_results[frame_id][0], output_path, score, frame_id)
+                
         cv2.imshow("Tracking", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -138,11 +140,10 @@ def run_sort_tracker(video_path):
     # out.release()
     cv2.destroyAllWindows()
 
-
     return tracking_results
 
 # Match objects across cameras using ReID
-def match_objects_across_cameras(detections_cam1, detections_cam2, threshold=0.85):
+def match_objects_across_cameras(detections_cam1, detections_cam2, threshold=0.8):
     matched_objects = []
     
     for obj1 in detections_cam1:
@@ -191,64 +192,60 @@ def assign_global_id(obj, detections, cam_id):
     return global_id_counter - 1  # Return the assigned global ID
 
 
-# Process multiple cameras for a sequence
-def process_sequence(sequence, num_cameras=5):
+def process_sequence(sequence, cams):
     camera_tracks = {}
-    
-    # for cam in range(1, num_cameras + 1):
-    for cam in range(1, 3):
-        video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c00{cam}/vdo.avi'
-        camera_tracks[cam]= run_sort_tracker(video_path)
-    
-        # print('___________________________________________________________')
-        # print(camera_tracks[cam])
+    for cam in cams:
+            if cam > 9:
+                video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c0{cam}/vdo.avi'
+            else:
+                video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c00{cam}/vdo.avi'
 
-    print('//////////////////////////////////////////////////////////////////////////////////////////////////')
-    # Now match objects across cameras
-    # for cam1 in range(1, num_cameras):
-    for cam1 in range(1, 3):
-        for cam2 in range(cam1 + 1, 3):
-        # for cam2 in range(cam1 + 1, num_cameras + 1):
+            camera_tracks[cam]= run_sort_tracker(video_path, cam, sequence=sequence)
 
-            matched_objects = match_objects_across_cameras(camera_tracks[cam1], camera_tracks[cam2])
 
-            print(matched_objects)
-            print('//////////////////////////////////////////////////////////////////////////////////////////////////')
-            for obj1, obj2 in matched_objects:
-                global_id = assign_global_id(obj1, camera_tracks, cam1)
-                assign_global_id(obj2, camera_tracks, cam2)
+    for cam1 in cams:
+        for cam2 in cams:
+            if cam1 != cam2:
+                matched_objects = match_objects_across_cameras(camera_tracks[cam1], camera_tracks[cam2])
 
-            print(global_id)
-            # print(global_id_map)
-            print(object_to_global)
+                print(matched_objects)
+                for obj1, obj2 in matched_objects:
+                    global_id = assign_global_id(obj1, camera_tracks, cam1)
+                    assign_global_id(obj2, camera_tracks, cam2)
 
-    return camera_tracks
 
 if __name__ == "__main__":
 
     start = time.time()
 
-    # sequences = ["S01", "S03", "S04"]
     old_stdout = sys.stdout
     log_file = open("MyOutput.log", "w")
     sys.stdout = log_file
+    
+    sequences = {
+        'S01': range(1, 6),  # Cameras 1-5
+        'S03': range(10, 16),  # Cameras 10-15
+        'S04': range(16, 41)  # Cameras 16-40
+    }
+    # sequences_1 = {
+    #     'S01': range(1, 6),  # Cameras 1-5
+    # }
+    # sequences_3 = {
+    #     'S03': range(10, 16),  # Cameras 1-5
+    # }
+    # sequences_4 = {
+    #     'S04': range(16, 41),  # Cameras 1-5
+    # }
 
-    sequences = ["S01"]
-
-    for seq in sequences:
-        process_sequence(seq)
+    for seq, cams in sequences.items():
+        process_sequence(seq, cams)
 
 
     end = time.time()
-
-    # Convert seconds to hours and minutes
     elapsed_time = end - start
-
-    print(elapsed_time)
 
     hours = int(elapsed_time // 3600)
     minutes = int((elapsed_time % 3600) // 60)
-
     seconds = int(elapsed_time % 60)
 
     print(f"Code execution time: {hours} hours, {minutes} minutes, and {seconds} seconds")

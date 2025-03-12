@@ -46,17 +46,18 @@ class PyFlowEstimator(): # This class is taken from last years team3 code. It is
 
         return flow
 
-estimator = PyFlowEstimator()
+
+alpha = 0.013
+
+
+estimator = PyFlowEstimator(alpha=alpha)
 flow = estimator.estimate(img1_path, img2_path)
-print(flow)
+#print(flow)
+
+print(flow.shape)
 
 noc_gt, noc_val = load_flow_from_file(noc_path)
-occ_gt, occ_val = load_flow_from_file(occ_path)
-
-
-
-
-
+#occ_gt, occ_val = load_flow_from_file(occ_path)
 
 
 msen, pepn = calculate_optical_flow_metrics(flow, noc_gt, noc_val, plot=True)
@@ -64,7 +65,7 @@ msen, pepn = calculate_optical_flow_metrics(flow, noc_gt, noc_val, plot=True)
 print(f'MSEN: {msen}')
 print(f'PEPN: {pepn}')
 
-msen, pepn = calculate_optical_flow_metrics(flow, occ_gt, occ_val, plot=True)
+#msen, pepn = calculate_optical_flow_metrics(flow, occ_gt, occ_val, plot=False)
 
-print(f'MSEN: {msen}')
-print(f'PEPN: {pepn}')
+#print(f'MSEN: {msen}')
+#print(f'PEPN: {pepn}')

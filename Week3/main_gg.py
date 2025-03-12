@@ -227,15 +227,6 @@ if __name__ == "__main__":
         'S03': range(10, 16),  # Cameras 10-15
         'S04': range(16, 41)  # Cameras 16-40
     }
-    # sequences_1 = {
-    #     'S01': range(1, 6),  # Cameras 1-5
-    # }
-    # sequences_3 = {
-    #     'S03': range(10, 16),  # Cameras 1-5
-    # }
-    # sequences_4 = {
-    #     'S04': range(16, 41),  # Cameras 1-5
-    # }
 
     for seq, cams in sequences.items():
         process_sequence(seq, cams)

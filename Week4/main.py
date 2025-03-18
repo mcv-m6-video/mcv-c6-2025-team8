@@ -179,20 +179,16 @@ def match_objects_across_cameras(detections_cam1, detections_cam2, threshold=0.8
 def process_sequence(sequence, cams):
     camera_tracks = {}
     for cam in cams:
-        print(cam)
-        # print(type(cam))
-        if cam == 3:
-            if cam > 9:
-                video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c0{cam}/vdo.avi'
-            else:
-                video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c00{cam}/vdo.avi'
 
-            print(video_path)
+        if cam > 9:
+            video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c0{cam}/vdo.avi'
+        else:
+            video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c00{cam}/vdo.avi'
 
-            camera_tracks[cam], last_track_id= run_sort_tracker(video_path, cam, sequence=sequence)
-            object_id_count.append(last_track_id)
-            # print(last_track_id)
-            print(object_id_count)
+        camera_tracks[cam], last_track_id= run_sort_tracker(video_path, cam, sequence=sequence)
+        object_id_count.append(last_track_id)
+        # print(last_track_id)
+        print(object_id_count)
 
     for cam1 in cams:
         for cam2 in cams:

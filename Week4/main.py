@@ -24,6 +24,21 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 yolo_model = YOLO('yolov8n.pt').to(device)
 
+def filter_and_save_lines(file_path, object_ids, output_file="filtered_detection.txt"):
+    filtered_lines = []
+    
+    with open(file_path, "r") as file:
+        for line in file:
+            parts = line.strip().split(",")
+            if int(parts[1]) in object_ids:  # Check if the second value (object ID) is in the list
+                filtered_lines.append(line.strip())
+
+    # Write the filtered lines to the output file
+    with open(output_file, "w") as out_file:
+        out_file.write("\n".join(filtered_lines))
+
+    print(f"Filtered lines saved to {output_file}")
+
 
 def are_objects_from_different_videos(obj1, obj2, max_ids):
     for i in max_ids:
@@ -92,6 +107,7 @@ def detect_with_features(frame):
             
             obj_crop = frame[y1:y2, x1:x2] 
                 
+                # Extract appearance features
             with open('NUL', 'w') as fnull:  # Use 'NUL' for Windows
                 with contextlib.redirect_stdout(fnull):
                     feature_vector = extract_features(obj_crop)
@@ -104,7 +120,7 @@ def detect_with_features(frame):
 def run_sort_tracker(video_path, cam, sequence):
     cap = cv2.VideoCapture(video_path)
 
-    tracker = Sort()
+    tracker = Sort(max_age = 21, min_hits=3, iou_threshold=0.1)
     tracking_results = {}    
 
     last_track_id = 0 
@@ -118,30 +134,31 @@ def run_sort_tracker(video_path, cam, sequence):
         detections = detect_with_features(frame)
 
         dets = np.array([d[:5] for d in detections])  # Ignore features for SORT
+
+        if len(dets) > 0:
+            # print(f'xuy')
+            tracks = tracker.update(dets)
+            score = detections[0][4]
+            feature_vector = detections[0][5]
+        else:
+            # print(f'na xuy')
+            tracks = tracker.update(np.empty((0, 5)))
+
         
-        with open('NUL', 'w') as fnull:  # Use 'NUL' for Windows
-            with contextlib.redirect_stdout(fnull):
-                tracks = tracker.update(dets)
-
-        score = detections[0][4]
-        feature_vector = detections[0][5]
-
         tracking_results[frame_id] = [(t[0], t[1], t[2], t[3], int(t[4]), feature_vector) for t in tracks]
 
-        output_path = f"filtered_detections_{sequence}_{cam}.txt"
+        output_path = f"output/detection/{sequence}/detections_{cam}.txt"
+        
+        if len(tracking_results[frame_id]) > 0:
+            for track in tracking_results[frame_id]:
+                    x1, y1, x2, y2, track_id = map(int, track[:5])
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    
+                    last_track_id = max(track_id, last_track_id)
 
-        
-        for track in tracking_results[frame_id]:
-                x1, y1, x2, y2, track_id = map(int, track[:5])
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                
-                last_track_id = max(track_id, last_track_id)
-
-        save_detections(tracking_results[frame_id][0], output_path, score, frame_id)
-        
-        
+            save_detections(tracking_results[frame_id][0], output_path, score, frame_id)
 
         cv2.imshow("Tracking", frame)
 
@@ -176,14 +193,20 @@ def match_objects_across_cameras(detections_cam1, detections_cam2, threshold=0.8
     
     return matched_objects
 
+
+object_id_count = []
+object_id_cam = {i: [] for i in range(1, 40)}
+
 def process_sequence(sequence, cams):
     camera_tracks = {}
     for cam in cams:
-
+        # if cam == 3:
         if cam > 9:
             video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c0{cam}/vdo.avi'
         else:
             video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c00{cam}/vdo.avi'
+
+        # print(video_path)
 
         camera_tracks[cam], last_track_id= run_sort_tracker(video_path, cam, sequence=sequence)
         object_id_count.append(last_track_id)
@@ -199,23 +222,48 @@ def process_sequence(sequence, cams):
                 
                 print(matched_objects)
 
-    objects_from_video1 = []
-    objects_from_video2 = []
 
-    for obj1, obj2 in matched_objects:
-        if are_objects_from_different_videos(obj1, obj2, object_id_count):
+                # objects_from_video1 = []
+                # objects_from_video2 = []
 
-            obj1, obj2 = min(obj1, obj2), max(obj1, obj2)
-            objects_from_video1.append(obj1)
-            objects_from_video2.append(obj2)
+                for obj1, obj2 in matched_objects:
+                    if are_objects_from_different_videos(obj1, obj2, object_id_count):
+
+                        obj1, obj2 = min(obj1, obj2), max(obj1, obj2)
+                        object_id_cam[cam1].append(obj1)
+                        object_id_cam[cam2].append(obj2)
+
+                #         objects_from_video1.append(obj1)
+                #         objects_from_video2.append(obj2)
+
+                # object_id_cam[cam1].append(objects_from_video1)
+                # object_id_cam[cam2].append(objects_from_video1)
+    for _, value in object_id_cam:
+        value = set(value)
 
     print(f"Objects which are at least in two videos :)")
-    print(set(objects_from_video1))
-    print(set(objects_from_video2))
+    print(object_id_cam)
+
+    for key, value in object_id_cam:
+        file_path = f"output/detection/S01/detections_{key}.txt"
+        output_file = f"output/filtered_detection/S01/filtered_detections_{key}.txt"
+        filter_and_save_lines(file_path, value, output_file)
 
 if __name__ == "__main__":
 
     start = time.time()
+
+    os.makedirs("output/detection", exist_ok=True)
+    os.makedirs("output/filtered_detection", exist_ok=True)
+
+    os.makedirs("output/detection/S01", exist_ok=True)
+    os.makedirs("output/detection/S03", exist_ok=True)
+    os.makedirs("output/detection/S04", exist_ok=True)
+
+    os.makedirs("output/filtered_detection/S01", exist_ok=True)
+    os.makedirs("output/filtered_detection/S03", exist_ok=True)
+    os.makedirs("output/filtered_detection/S04", exist_ok=True)
+
 
     old_stdout = sys.stdout
     log_file = open("MyOutput.log", "w")
@@ -227,7 +275,7 @@ if __name__ == "__main__":
         'S04': range(16, 41)  # Cameras 16-40
     }
     sequences_1 = {
-        'S01': range(1, 4),  # Cameras 1-5
+        'S01': range(1, 6),  # Cameras 1-5
     }
     # sequences_3 = {
     #     'S03': range(10, 16),  # Cameras 1-5

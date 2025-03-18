@@ -8,7 +8,7 @@ import time
 
 from PIL import Image
 from ultralytics import YOLO
-from my_sort import Sort  # SORT tracker
+from sort import Sort  # SORT tracker
 from sklearn.metrics.pairwise import cosine_similarity
 
 import logging

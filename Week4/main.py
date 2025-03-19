@@ -16,6 +16,9 @@ import contextlib
 
 from collections import defaultdict
 
+import torch
+import torch.nn.functional as F
+
 # Suppress torchreid logging
 logging.getLogger("torchreid").setLevel(logging.ERROR)
 
@@ -34,7 +37,7 @@ def filter_and_save_lines(file_path, object_ids, output_file="filtered_detection
                 filtered_lines.append(line.strip())
 
     # Write the filtered lines to the output file
-    with open(output_file, "w") as out_file:
+    with open(output_file, "a") as out_file:
         out_file.write("\n".join(filtered_lines))
 
     print(f"Filtered lines saved to {output_file}")
@@ -159,6 +162,8 @@ def run_sort_tracker(video_path, cam, sequence):
                     last_track_id = max(track_id, last_track_id)
 
             save_detections(tracking_results[frame_id][0], output_path, score, frame_id)
+        
+
 
         cv2.imshow("Tracking", frame)
 
@@ -172,46 +177,53 @@ def run_sort_tracker(video_path, cam, sequence):
     return tracking_results, last_track_id
 
 # Match objects across cameras using ReID
-def match_objects_across_cameras(detections_cam1, detections_cam2, threshold=0.8):
+def match_objects_across_cameras(detections_cam1, detections_cam2, threshold=0.8, device='cuda'):
     matched_objects = []
     
     for obj1 in detections_cam1:
         best_match = None
         best_score = 0
-        
+
         for obj2 in detections_cam2:
+            try:
+                # Convert feature vectors to PyTorch tensors and move to GPU
+                feature1 = torch.tensor(detections_cam1[obj1][0][5]).to(device).float().flatten()
+                feature2 = torch.tensor(detections_cam2[obj2][0][5]).to(device).float().flatten()
 
-            similarity = cosine_similarity(detections_cam1[obj1][0][5].reshape(1, -1), detections_cam2[obj2][0][5].reshape(1, -1))[0][0]
-            if similarity > best_score and similarity > threshold:
-                best_score = similarity
-                best_match = obj2
+                # Compute cosine similarity
+                similarity = F.cosine_similarity(feature1.unsqueeze(0), feature2.unsqueeze(0), dim=1).item()
 
-                # print(obj1, obj2, similarity)
+                if similarity > best_score and similarity > threshold:
+                    best_score = similarity
+                    best_match = obj2
+                    # print(obj1, obj2, similarity)
+
+            except (IndexError, KeyError):
+                continue
 
         if best_match:
             matched_objects.append((obj1, best_match))
-    
-    return matched_objects
 
+    return matched_objects
 
 object_id_count = []
 object_id_cam = {i: [] for i in range(1, 40)}
 
 def process_sequence(sequence, cams):
     camera_tracks = {}
+
+    print(cams)
     for cam in cams:
-        # if cam == 3:
         if cam > 9:
             video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c0{cam}/vdo.avi'
         else:
             video_path = f'Week3/aic19-track1-mtmc-train/train/{sequence}/c00{cam}/vdo.avi'
 
-        # print(video_path)
 
         camera_tracks[cam], last_track_id= run_sort_tracker(video_path, cam, sequence=sequence)
         object_id_count.append(last_track_id)
-        # print(last_track_id)
         print(object_id_count)
+
 
     for cam1 in cams:
         for cam2 in cams:
@@ -222,29 +234,26 @@ def process_sequence(sequence, cams):
                 
                 print(matched_objects)
 
-
-                # objects_from_video1 = []
-                # objects_from_video2 = []
-
                 for obj1, obj2 in matched_objects:
                     if are_objects_from_different_videos(obj1, obj2, object_id_count):
 
-                        obj1, obj2 = min(obj1, obj2), max(obj1, obj2)
-                        object_id_cam[cam1].append(obj1)
-                        object_id_cam[cam2].append(obj2)
+                        # obj1, obj2 = min(obj1, obj2), max(obj1, obj2)
 
-                #         objects_from_video1.append(obj1)
-                #         objects_from_video2.append(obj2)
-
-                # object_id_cam[cam1].append(objects_from_video1)
-                # object_id_cam[cam2].append(objects_from_video1)
-    for _, value in object_id_cam:
-        value = set(value)
-
+                        if obj1 in object_id_cam[cam1]:
+                            pass
+                        else:
+                            object_id_cam[cam1].append(obj1)
+                        
+                        
+                        if obj2 in object_id_cam[cam2]:
+                            pass
+                        else:
+                            object_id_cam[cam2].append(obj2)
+                        
     print(f"Objects which are at least in two videos :)")
     print(object_id_cam)
 
-    for key, value in object_id_cam:
+    for key, value in object_id_cam.items():
         file_path = f"output/detection/S01/detections_{key}.txt"
         output_file = f"output/filtered_detection/S01/filtered_detections_{key}.txt"
         filter_and_save_lines(file_path, value, output_file)
@@ -285,6 +294,8 @@ if __name__ == "__main__":
     }
 
     for seq, cams in sequences_1.items():
+        print(cams)
+
         process_sequence(seq, cams)
 
 

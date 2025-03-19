@@ -95,10 +95,6 @@ def match_objects_across_cameras(sequence, output_file="matched_objects.txt", th
                 match = (frame1, c1, obj1, c2, obj2, similarity)
                 with open(output_file, "a") as f:
                     f.write(f"{match[0]}, {match[1]}, {match[2]}, {match[3]}, {match[4]}, {match[5]:.4f}\n")
-    # Save matched objects to a text file
-    # with open(output_file, "w") as f:
-    #     for match in matched_objects:
-    #         f.write(f"{match[0]}, {match[1]}, {match[2]}, {match[3]}, {match[4]}, {match[5]:.4f}\n")
 
     for cap in video_captures.values():
         cap.release()

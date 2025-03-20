@@ -74,11 +74,11 @@ This script computes:
 After filtering, the output filtered detections will be available in `output/filtered_detection/`. The evaluation metrics will be printed on the console.
 
 ## Requirements
-- Python 3.x
+- Python 3.x ![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat&logo=python)
 - Ultralytics YOLO ![Ultralytics YOLO](https://img.shields.io/badge/Ultralytics-YOLOv8-blue?style=flat&logo=ultralytics)
-- torchreid
-- collections
-- torch
-- scipy
-- torchvision
+- torchreid ![torchreid](https://img.shields.io/badge/Library-torchreid-orange)
+- collections ![Collections](https://img.shields.io/badge/Library-collections-green)
+- torch ![PyTorch](https://img.shields.io/badge/Framework-PyTorch-red?style=flat&logo=pytorch)
+- scipy ![SciPy](https://img.shields.io/badge/Library-SciPy-blue?style=flat&logo=scipy)  
+- torchvision ![Torchvision](https://img.shields.io/badge/Library-Torchvision-lightgrey) 
 

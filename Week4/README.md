@@ -75,7 +75,7 @@ After filtering, the output filtered detections will be available in `output/fil
 
 ## Requirements
 - Python 3.x
-- Ultralytics YOLO
+- Ultralytics YOLO ![Ultralytics YOLO](https://img.shields.io/badge/Ultralytics-YOLOv8-blue?style=flat&logo=ultralytics)
 - torchreid
 - collections
 - torch

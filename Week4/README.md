@@ -55,9 +55,9 @@ The `filtering.py` script filters detections based on object matching.
 python filtering.py
 ```
 This script:
-1. Loads the matched object pairs from `matched_objects_S03.txt`.
-2. Filters detections from `output/detection/S03/detections_{camera_id}.txt`.
-3. Saves filtered detections to `output/filtered_detection/S03/filtered_detections_{camera_id}.txt`.
+1. Loads the matched object pairs from `matched_objects_{sequence}.txt`.
+2. Filters detections from `output/detection/{sequence}/detections_{camera_id}.txt`.
+3. Saves filtered detections to `output/filtered_detection/{sequence}/filtered_detections_{camera_id}.txt`.
 
 ## Evaluation with HOTA and IDF1
 The `HOTA-IDF1.py` script evaluates the filtered detections.

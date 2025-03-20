@@ -1,4 +1,4 @@
-# Multi-Camera Vehicle Tracking with Filtering and Evaluation
+# Multi-Camera Vehicle Tracking
 
 ## Overview
 This project focuses on multi-camera vehicle tracking using object detection, tracking, and re-identification (ReID). The pipeline involves:

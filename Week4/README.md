@@ -84,8 +84,15 @@ After filtering, the output filtered detections will be available in `output/fil
 
 ## Acknowledgements
 
-If you use this project or data, please cite the **AI City Challenge 2022**:
+This project uses data from the **AI City Challenge** and utilizes the tracking algorithm **SORT**.
+If you use this project or data, please cite the **AI City Challenge**.
 
-> M. Naphade, J. Tang, S. Wang, L. Chang, A. Sharma, S. Birchfield, A. Das, R. Zhang, J. P. C. Valentin, A. Kirillov, D. Park, and Z. Tian,  
-> **"AI City Challenge 2022"**, IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, 2022.  
-> [AI City Challenge 2022](https://www.aicitychallenge.org/)
+- **AI City Challenge 2022**  
+  M. Naphade, J. Tang, S. Wang, L. Chang, A. Sharma, S. Birchfield, A. Das, R. Zhang, J. P. C. Valentin, A. Kirillov, D. Park, and Z. Tian,  
+  *"AI City Challenge 2022"*, IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, 2022.  
+  [AI City Challenge](https://www.aicitychallenge.org/)  
+
+- **SORT (Simple Online and Realtime Tracker)**  
+  A. Bewley, Z. Ge, L. Ott, F. Ramos, and B. Upcroft,  
+  *"Simple Online and Realtime Tracker"*, IEEE International Conference on Image Processing (ICIP), 2016.  
+  [[Paper]](https://arxiv.org/abs/1602.00763) | [[GitHub Repo]](https://github.com/abewley/sort)

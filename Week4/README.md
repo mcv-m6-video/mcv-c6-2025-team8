@@ -80,5 +80,12 @@ After filtering, the output filtered detections will be available in `output/fil
 - collections ![Collections](https://img.shields.io/badge/Library-collections-green)
 - torch ![PyTorch](https://img.shields.io/badge/Framework-PyTorch-red?style=flat&logo=pytorch)
 - scipy ![SciPy](https://img.shields.io/badge/Library-SciPy-blue?style=flat&logo=scipy)  
-- torchvision ![Torchvision](https://img.shields.io/badge/Library-Torchvision-lightgrey) 
+- torchvision ![Torchvision](https://img.shields.io/badge/Library-Torchvision-lightgrey)
 
+## Acknowledgements
+
+If you use this project or data, please cite the **AI City Challenge 2022**:
+
+> M. Naphade, J. Tang, S. Wang, L. Chang, A. Sharma, S. Birchfield, A. Das, R. Zhang, J. P. C. Valentin, A. Kirillov, D. Park, and Z. Tian,  
+> **"AI City Challenge 2022"**, IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, 2022.  
+> [AI City Challenge 2022](https://www.aicitychallenge.org/)

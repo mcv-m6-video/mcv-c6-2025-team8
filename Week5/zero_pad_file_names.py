@@ -14,7 +14,7 @@ def pad_filenames(directory, digits=6):
                     new_path = os.path.join(root, new_name)
                     if old_path != new_path:
                         os.rename(old_path, new_path)
-                        print(f"✅ Renamed {file} → {new_name}")
+                        print(f"Renamed {file} to {new_name}")
 
 
 # Example usage:

@@ -63,4 +63,4 @@ for match_path in tqdm(match_dirs, desc="Tracking matches"):
     with open(output_file, 'w') as f:
         json.dump(tracking_data, f, indent=4)
 
-    print(f"✅ Saved: {output_file}")
+    print(f"Saved: {output_file}")

@@ -84,7 +84,7 @@ def main():
     os.makedirs(args.out_dir, exist_ok=True)
     save_path = os.path.join(args.out_dir, 'tracking.pt')
     torch.save(tracking_features, save_path)
-    print(f"✅ Saved tracking features to {save_path}")
+    print(f"Saved tracking features to {save_path}")
 
 
 if __name__ == '__main__':

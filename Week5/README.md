@@ -2,7 +2,7 @@
 
 ## Overview
 
-This folder contains all scripts used to run the baseline model from the repository [CVMasterActionRecognitionSpotting](https://github.com/arturxe2/CVMasterActionRecognitionSpotting) and to explore several enhancements in Week 5 of the MCV C6 course.
+This folder contains all scripts used to run the baseline model from the repository [CVMasterActionRecognitionSpotting](https://github.com/arturxe2/CVMasterActionRecognitionSpotting) and to explore several improvements in Week 5 of the MCV C6 course.
 
 ### Enhancements Summary
 
@@ -77,7 +77,7 @@ Valid options include: `resnet50`, `efficientnet`, `convnext`, etc.
 
 ## Adding YOLO Tracking Features
 
-To enrich your input with object-level tracking info, follow these steps:
+To include object-level tracking information in your input, follow these steps:
 
 ### 1. Zero-pad Frame Filenames
 This ensures consistency for YOLO inference.

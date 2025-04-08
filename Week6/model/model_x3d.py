@@ -96,53 +96,67 @@ class Model(BaseRGBModel):
     class X3D(nn.Module):
         def __init__(self, args=None):
             super().__init__()
+
             self.num_classes = args.num_classes
-            self.backbone = torch.hub.load('facebookresearch/pytorchvideo', 'x3d_m', pretrained=True)
 
-            # Feature dim
+            # Load pretrained X3D backbone from PyTorchVideo
+            self.backbone = torch.hub.load(
+                'facebookresearch/pytorchvideo', 'x3d_m', pretrained=True
+            )
+
+            # Extract feature dimension and remove classification head
             self.feat_dim = self.backbone.blocks[-1].proj.in_features
-
-            # Remove final classifier
             self.backbone.blocks[-1].proj = nn.Identity()
 
-            # Frame-wise classifier
+            # Frame-wise classification head
             self.classifier = nn.Sequential(
                 nn.Linear(self.feat_dim, 512),
                 nn.ReLU(),
                 nn.Dropout(0.3),
-                nn.Linear(512, self.num_classes + 1)
+                nn.Linear(512, self.num_classes + 1)  # +1 for background class
             )
 
-            # Augmentations
+            # Augmentation pipeline
             self.augmentation = T.Compose([
-                T.RandomApply([T.ColorJitter(hue=0.1, brightness=0.8, contrast=0.8)], p=0.3),
-                T.RandomHorizontalFlip(),
+                T.RandomApply(
+                    [T.ColorJitter(hue=0.1, brightness=0.8, contrast=0.8)],
+                    p=0.3
+                ),
+                T.RandomHorizontalFlip()
             ])
 
-            self.standarization = T.Normalize(mean=(0.485, 0.456, 0.406),
-                                            std=(0.229, 0.224, 0.225))
+            # Standard normalization (ImageNet-style)
+            self.standarization = T.Normalize(
+                mean=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225)
+            )
 
-            # Freeze everything
+            # Freeze all backbone layers except the final block
             for param in self.backbone.parameters():
                 param.requires_grad = False
             for param in self.backbone.blocks[-1].parameters():
                 param.requires_grad = True
 
         def forward(self, x):
-            x = self.normalize(x)  # [B, T, C, H, W]
+            # Input shape: [B, T, C, H, W]
+            x = self.normalize(x)
 
             if self.training:
                 x = self.augment(x)
 
             x = self.standarize(x)
-            x = x.permute(0, 2, 1, 3, 4)  # [B, C, T, H, W]
 
-            feat = self.backbone(x)  # [B, D, 1, 1, 1]
-            feat = feat.view(feat.shape[0], self.feat_dim)  # [B, D]
+            # Rearrange to [B, C, T, H, W] for 3D CNN
+            x = x.permute(0, 2, 1, 3, 4)
 
-            T_len = x.shape[2]
-            feat = feat.unsqueeze(1).repeat(1, T_len, 1)  # [B, T, D]
+            # Extract features: [B, D, 1, 1, 1] -> [B, D]
+            feat = self.backbone(x).view(x.size(0), self.feat_dim)
 
+            # Repeat features across temporal length
+            T_len = x.size(2)
+            feat = feat.unsqueeze(1).expand(-1, T_len, -1)  # [B, T, D]
+
+            # Classify each frame
             out = self.classifier(feat)  # [B, T, num_classes + 1]
             return out
 
@@ -150,18 +164,18 @@ class Model(BaseRGBModel):
             return x / 255.
 
         def augment(self, x):
-            for i in range(x.shape[0]):
+            for i in range(x.size(0)):
                 x[i] = self.augmentation(x[i])
             return x
 
         def standarize(self, x):
-            for i in range(x.shape[0]):
+            for i in range(x.size(0)):
                 x[i] = self.standarization(x[i])
             return x
 
         def print_stats(self):
-            print('Model params:',
-                sum(p.numel() for p in self.parameters() if p.requires_grad))
+            total_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+            print(f'Model params: {total_params}')
             
         
     def __init__(self, args=None):

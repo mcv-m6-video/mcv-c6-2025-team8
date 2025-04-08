@@ -2,7 +2,7 @@
     "frame_dir": "../SN-BAS-2025_frames/398x224",
     "save_dir": "../SN-BAS-2025_savedata",
     "labels_dir": "../SN-BAS-2025",
-    "store_mode": "load",
+    "store_mode": "store",
     "task": "spotting",
     "batch_size": 4,
     "clip_len": 50,

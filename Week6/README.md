@@ -5,8 +5,6 @@
 This folder contains all scripts used to run the baseline model from the repository [CVMasterActionSpotting](https://github.com/arturxe2/CVMasterActionSpotting.git) and to explore several improvements in Week 6 of the MCV C6 course.
 
 ### Our Experiments
-
-**Key Observations**:
 - baseline + Bi-LSTM + fine-tune
 - baseline + Bi-LSTM
 - x3d + Bi-LSTM

@@ -29,6 +29,7 @@ Week6/
 │   ├── x3d.json
 │   └── transformer.json
 │   ├── x3d_and_bi_lstm.json
+│   ├── README.md
 ├── main_spotting.py
 ├── main_spotting_bi_lstm.py
 ├── main_spotting_x3d.py

@@ -18,8 +18,9 @@ This folder contains all scripts used to run the baseline model from the reposit
 
 ```
 Week6/
-├── checkpoints/                    # Saved model checkpoints
-│   └── checkpoint_best.pt
+├── bi_lstm/
+│   └── checkpoints/                    # Saved model checkpoints
+│       └── checkpoint_best.pt
 ├── config/                         # Config files for each model
 │   ├── baseline.json
 │   ├── baseline_with_yolo.json

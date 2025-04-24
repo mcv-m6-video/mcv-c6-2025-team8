@@ -11,6 +11,8 @@ This folder contains all scripts used to run the baseline model from the reposit
 - baseline
 - baseline + transformer
 - x3d
+- baseline + Bi-LSTM + TDEED
+- baseline + TriDed
   
 ---
 
@@ -45,7 +47,7 @@ Follow the installation guide from the original repository:
 
 Then:
 
-1. Copy all `.py` scripts from `Week5/` into your cloned repo.
+1. Copy all `.py` scripts from `Week7/` into your cloned repo.
 2. Place all `*.json` config files into the `config/` folder of the repo.
 3. Copy the `checkpoint_best.pt` model into your working directory for evaluation.
 
